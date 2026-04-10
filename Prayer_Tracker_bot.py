@@ -199,27 +199,40 @@ scheduler.add_job(yearly_job, 'cron', month=12, day=31, hour=23, minute=59)
 scheduler.start()
 
 # ==========================================
-# 5. DUMMY WEB SERVER & START THE BOT
+# 5. WEBHOOK WEB SERVER & START THE BOT
 # ==========================================
-import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from flask import Flask, request
+import time
 
-# This creates a fake web server so Choreo's health checks pass
-class DummyHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-        self.wfile.write(b"Bot is alive and running!")
+app = Flask(__name__)
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-def run_dummy_server():
-    server = HTTPServer(('0.0.0.0', 8080), DummyHandler)
-    server.serve_forever()
+# This listens for incoming messages from Telegram
+@app.route('/', methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    else:
+        return "OK"
+
+# This keeps Choreo's health checks happy
+@app.route('/', methods=['GET'])
+def index():
+    return "Bot is alive and running via Webhook!"
 
 if __name__ == "__main__":
-    # Start the dummy web server in the background on port 8080
-    threading.Thread(target=run_dummy_server, daemon=True).start()
+    if WEBHOOK_URL:
+        # Remove any old connections
+        bot.remove_webhook()
+        time.sleep(1)
+        # Tell Telegram to send messages to your Choreo URL
+        bot.set_webhook(url=WEBHOOK_URL)
+        print(f"Webhook set to {WEBHOOK_URL}")
+    else:
+        print("ERROR: WEBHOOK_URL environment variable is missing!")
     
-    print("Bot is running...")
-# Start the Telegram bot with shorter timeouts to bypass Choreo's network limits
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    # Start the Flask web server on port 8080
+    app.run(host="0.0.0.0", port=8080)

@@ -221,5 +221,5 @@ if __name__ == "__main__":
     threading.Thread(target=run_dummy_server, daemon=True).start()
     
     print("Bot is running...")
-    # Start the Telegram bot
-    bot.infinity_polling()
+# Start the Telegram bot with shorter timeouts to bypass Choreo's network limits
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)

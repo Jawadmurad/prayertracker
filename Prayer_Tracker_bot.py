@@ -203,6 +203,7 @@ scheduler.start()
 # ==========================================
 from flask import Flask, request
 import time
+import sys
 
 app = Flask(__name__)
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
@@ -225,14 +226,24 @@ def index():
 
 if __name__ == "__main__":
     if WEBHOOK_URL:
-        # Remove any old connections
-        bot.remove_webhook()
-        time.sleep(1)
-        # Tell Telegram to send messages to your Choreo URL
-        bot.set_webhook(url=WEBHOOK_URL)
-        print(f"Webhook set to {WEBHOOK_URL}")
+        try:
+            print("Removing old webhook...")
+            bot.remove_webhook()
+            time.sleep(1)
+            
+            print(f"Setting new webhook to: {WEBHOOK_URL}")
+            bot.set_webhook(url=WEBHOOK_URL)
+            print("Webhook set successfully! 🚀")
+        except Exception as e:
+            print("===================================")
+            print(f"❌ FATAL TELEGRAM API ERROR: {e}")
+            print("===================================")
     else:
-        print("ERROR: WEBHOOK_URL environment variable is missing!")
-    
-    # Start the Flask web server on port 8080
-    app.run(host="0.0.0.0", port=8080)
+        print("❌ ERROR: WEBHOOK_URL is completely missing from Environment Variables!")
+
+    # Start the Flask web server on port 8080 (this will keep the container alive)
+    try:
+        print("Starting Flask server on port 8080...")
+        app.run(host="0.0.0.0", port=8080)
+    except Exception as e:
+        print(f"❌ FLASK SERVER CRASHED: {e}")

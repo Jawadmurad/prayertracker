@@ -199,8 +199,27 @@ scheduler.add_job(yearly_job, 'cron', month=12, day=31, hour=23, minute=59)
 scheduler.start()
 
 # ==========================================
-# 5. START THE BOT
+# 5. DUMMY WEB SERVER & START THE BOT
 # ==========================================
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+# This creates a fake web server so Choreo's health checks pass
+class DummyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"Bot is alive and running!")
+
+def run_dummy_server():
+    server = HTTPServer(('0.0.0.0', 8080), DummyHandler)
+    server.serve_forever()
+
 if __name__ == "__main__":
+    # Start the dummy web server in the background on port 8080
+    threading.Thread(target=run_dummy_server, daemon=True).start()
+    
     print("Bot is running...")
+    # Start the Telegram bot
     bot.infinity_polling()

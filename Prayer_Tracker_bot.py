@@ -10,7 +10,7 @@ import os
 # 1. ADD YOUR TELEGRAM BOT TOKEN HERE
 # ==========================================
 # It is best to use environment variables in Choreo, but you can paste it directly here.
-TOKEN = os.getenv("BOT_TOKEN", "8674357511:AAHaOp9llaWqhh4bN_iSK4GwvaDIItq-oDU")
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 bot = telebot.TeleBot(TOKEN)
 
